@@ -5,23 +5,27 @@ use smiles_parser::{DatasetFetchOptions, DatasetSource, GzipMode, PUBCHEM_SMILES
 
 use crate::{
     cid_map::{pubchem_id_map_path_for_shard_path, store_pubchem_id_map},
+    cli::BuildOptions,
     config::PubChemIndexConfig,
     errors::{invalid_data, DynError},
     manifest::{BuildReport, ShardRecord},
     pubchem::{prepare_targets, PreparedPubChemTarget, PubChemCidSmilesIter},
 };
 
-pub(crate) fn build_shards(config: &PubChemIndexConfig) -> Result<BuildReport, DynError> {
+pub(crate) fn build_shards(
+    config: &PubChemIndexConfig,
+    options: BuildOptions,
+) -> Result<BuildReport, DynError> {
     fs::create_dir_all(&config.shard_dir)?;
-    let options = DatasetFetchOptions {
+    let fetch_options = DatasetFetchOptions {
         cache_dir: None,
         gzip_mode: GzipMode::KeepCompressed,
         ..DatasetFetchOptions::default()
     };
-    let artifact = PUBCHEM_SMILES.fetch_with_options(&options)?;
+    let artifact = PUBCHEM_SMILES.fetch_with_options(&fetch_options)?;
     let records = PubChemCidSmilesIter::open(artifact.path())?;
     let mut batch = Vec::with_capacity(8192);
-    let mut writer = PubChemShardWriter::new(config);
+    let mut writer = PubChemShardWriter::new(config, options);
 
     for (record_idx, record) in records.enumerate() {
         batch.push((record_idx, record?));
@@ -35,6 +39,7 @@ pub(crate) fn build_shards(config: &PubChemIndexConfig) -> Result<BuildReport, D
 
 struct PubChemShardWriter<'a> {
     config: &'a PubChemIndexConfig,
+    options: BuildOptions,
     targets: Vec<PreparedTarget>,
     pubchem_ids: Vec<u32>,
     base_target_id: usize,
@@ -43,9 +48,10 @@ struct PubChemShardWriter<'a> {
 }
 
 impl<'a> PubChemShardWriter<'a> {
-    fn new(config: &'a PubChemIndexConfig) -> Self {
+    fn new(config: &'a PubChemIndexConfig, options: BuildOptions) -> Self {
         Self {
             config,
+            options,
             targets: Vec::with_capacity(config.shard_size.min(1_000_000)),
             pubchem_ids: Vec::with_capacity(config.shard_size.min(1_000_000)),
             base_target_id: 0,
@@ -104,13 +110,20 @@ impl<'a> PubChemShardWriter<'a> {
         let path = self.config.shard_dir.join(file_name);
         let pubchem_id_map_path = pubchem_id_map_path_for_shard_path(&path);
         let started = Instant::now();
+        let builder = PersistedTargetCorpusIndexShardBuilder::new(&targets)
+            .base_target_id(self.base_target_id)
+            .compression(self.config.compression);
         // SAFETY: this writes a trusted persisted-index payload that will be
         // consumed by this tool and compatible `smarts-rs` versions.
         let stats = unsafe {
-            PersistedTargetCorpusIndexShardBuilder::new(&targets)
-                .base_target_id(self.base_target_id)
-                .compression(self.config.compression)
-                .store_unchecked(&path)?
+            if self.options.verbose {
+                builder.store_unchecked_with_indicatif_progress(
+                    &path,
+                    format!("{:06}", self.shard_index),
+                )?
+            } else {
+                builder.store_unchecked(&path)?
+            }
         };
         let pubchem_id_map_stats =
             store_pubchem_id_map(&pubchem_id_map_path, &pubchem_ids, self.config.compression)?;

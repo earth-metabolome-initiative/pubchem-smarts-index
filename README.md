@@ -14,6 +14,13 @@ Zenodo:
 cargo run --release -- build
 ```
 
+Use `--verbose` to show per-shard `indicatif` progress while `smarts-rs` builds
+and stores each persisted shard:
+
+```sh
+cargo run --release -- build --verbose
+```
+
 Query a SMARTS pattern against the sharded index:
 
 ```sh

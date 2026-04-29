@@ -1608,11 +1608,12 @@ checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
 [[package]]
 name = "smarts-rs"
 version = "0.1.0"
-source = "git+https://github.com/earth-metabolome-initiative/smarts-rs?branch=main#9d3e84573032e8d1137da22e0cd2e9851785c4e4"
+source = "git+https://github.com/earth-metabolome-initiative/smarts-rs?branch=main#db859bde3f6566894791a924a533711c254faef8"
 dependencies = [
  "elements_rs",
  "epserde",
  "geometric-traits",
+ "indicatif",
  "rayon",
  "smiles-parser",
  "thiserror 2.0.18",

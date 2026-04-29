@@ -1,8 +1,8 @@
 use std::time::Instant;
 
 use crate::{
-    build::build_shards, config::PubChemIndexConfig, errors::DynError, manifest::write_manifest,
-    publisher::ZenodoPublisher, query::query_smarts,
+    build::build_shards, cli::BuildOptions, config::PubChemIndexConfig, errors::DynError,
+    manifest::write_manifest, publisher::ZenodoPublisher, query::query_smarts,
 };
 
 #[derive(Clone, Debug)]
@@ -17,10 +17,10 @@ impl PubChemIndex {
         }
     }
 
-    pub(crate) fn build_and_publish(&self) -> Result<(), DynError> {
+    pub(crate) fn build_and_publish(&self, options: BuildOptions) -> Result<(), DynError> {
         let publisher = ZenodoPublisher::from_env()?;
         let started = Instant::now();
-        let report = build_shards(&self.config)?;
+        let report = build_shards(&self.config, options)?;
         let manifest_path = write_manifest(&self.config, &report)?;
         eprintln!(
             "built {} PubChem SMARTS index shards for {} targets in {:?}",
