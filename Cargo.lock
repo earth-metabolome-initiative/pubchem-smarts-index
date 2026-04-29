@@ -1072,6 +1072,7 @@ dependencies = [
 name = "pubchem-smarts-index"
 version = "0.0.0"
 dependencies = [
+ "chrono",
  "dotenvy",
  "flate2",
  "rayon",
