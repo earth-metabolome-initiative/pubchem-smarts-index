@@ -69,18 +69,14 @@ fn write_u32_le_values(writer: &mut impl Write, values: &[u32]) -> Result<(), Io
 
 fn read_pubchem_id_map(path: &Path) -> Result<Vec<u32>, IoError> {
     let bytes = fs::read(path)?;
-    let mut chunks = bytes.chunks_exact(size_of::<u32>());
-    let ids = chunks
-        .by_ref()
-        .map(|chunk| u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]))
-        .collect::<Vec<_>>();
-    if !chunks.remainder().is_empty() {
+    let (chunks, remainder) = bytes.as_chunks::<{ size_of::<u32>() }>();
+    if !remainder.is_empty() {
         return Err(invalid_data(format!(
             "PubChem CID map has a trailing partial u32: {}",
             path.display()
         )));
     }
-    Ok(ids)
+    Ok(chunks.iter().copied().map(u32::from_le_bytes).collect())
 }
 
 pub(crate) struct PubChemIdLookup {
