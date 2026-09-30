@@ -41,7 +41,7 @@ impl ZenodoPublisher {
             .build()?;
         let published = runtime.block_on(async {
             let client = ZenodoClient::new(self.auth.clone())?;
-            client.create_and_publish_dataset(&metadata, uploads).await
+            Box::pin(client.create_and_publish_dataset(&metadata, uploads)).await
         })?;
         eprintln!(
             "published PubChem SMARTS index shards to Zenodo record {}",
