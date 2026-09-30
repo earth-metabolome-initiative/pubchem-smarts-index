@@ -1,7 +1,7 @@
 use std::{fs, time::Instant};
 
 use smarts_rs::{screening::persisted::PersistedTargetCorpusIndexShardBuilder, PreparedTarget};
-use smiles_parser::{DatasetFetchOptions, DatasetSource, GzipMode, PUBCHEM_SMILES};
+use smiles_rs::{ArchiveMode, DatasetFetchOptions, DatasetSource, PUBCHEM_SMILES};
 
 use crate::{
     cid_map::{pubchem_id_map_path_for_shard_path, store_pubchem_id_map},
@@ -19,7 +19,7 @@ pub(crate) fn build_shards(
     fs::create_dir_all(&config.shard_dir)?;
     let fetch_options = DatasetFetchOptions {
         cache_dir: None,
-        gzip_mode: GzipMode::KeepCompressed,
+        archive_mode: ArchiveMode::KeepCompressed,
         ..DatasetFetchOptions::default()
     };
     let artifact = PUBCHEM_SMILES.fetch_with_options(&fetch_options)?;
@@ -117,7 +117,7 @@ impl<'a> PubChemShardWriter<'a> {
         // consumed by this tool and compatible `smarts-rs` versions.
         let stats = unsafe {
             if self.options.verbose {
-                builder.store_unchecked_with_indicatif_progress(
+                builder.store_unchecked_with_terminal_progress(
                     &path,
                     format!("{:06}", self.shard_index),
                 )?
