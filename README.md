@@ -5,6 +5,8 @@
 
 Build compressed `smarts-rs` target-index shards for `PubChem` and query them.
 
+Build every shard in a corpus with the same `smiles-rs` version and aromaticity policy.
+
 Create `.env` from `.env.example` and set `ZENODO_TOKEN`. Then build the full
 `PubChem` index as 15M-target zstd shards under `data/shards`, store one
 compressed `PubChem` CID map per shard, and publish the shards plus manifest to
