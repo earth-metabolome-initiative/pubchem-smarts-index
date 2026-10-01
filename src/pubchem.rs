@@ -2,13 +2,12 @@ use std::{
     fs::File,
     io::{BufRead, BufReader, Error as IoError},
     path::{Path, PathBuf},
-    str::FromStr,
 };
 
 use flate2::read::GzDecoder;
 use rayon::prelude::*;
 use smarts_rs::PreparedTarget;
-use smiles_parser::Smiles;
+use smiles_rs::Smiles;
 
 use crate::errors::{invalid_data, DynError};
 
